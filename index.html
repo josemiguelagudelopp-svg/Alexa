@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.5">
+    <title>Juego de Motocross con Modelo Real</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: sans-serif;
+            user-select: none;
+        }
+        #info {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 15px 20px;
+            border-radius: 10px;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        h1 { font-size: 18px; margin: 0 0 8px 0; color: #ff5722; }
+        p { font-size: 13px; margin: 3px 0; color: #ddd; }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px 40px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">Cargando modelo de la moto...</div>
+
+    <div id="info">
+        <h1>Motocross - Honda Bros / CRF</h1>
+        <p><b>W / S</b> o <b>Flechas Arriba/Abajo</b>: Acelerar / Frenar</p>
+        <p><b>A / D</b> o <b>Flechas Izq/Der</b>: Girar</p>
+    </div>
+
+    <!-- Importar Three.js y GLTFLoader desde CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        let scene, camera, renderer, moto;
+        let keys = { forward: false, backward: false, left: false, right: false };
+        let speed = 0, maxSpeed = 0.5, turnSpeed = 0.035;
+
+        init();
+        animate();
+
+        function init() {
+            // 1. Escena y Niebla
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+            scene.fog = new THREE.FogExp2(0x87ceeb, 0.01);
+
+            // 2. Cámara
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            // 3. Renderizador
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // 4. Luces
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(50, 100, 50);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // 5. Suelo y Pista
+            const floorGeo = new THREE.PlaneGeometry(1500, 1500);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x4a7c2d, roughness: 0.9 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            const grid = new THREE.GridHelper(1500, 150, 0x333333, 0x555555);
+            grid.position.y = 0.02;
+            scene.add(grid);
+
+            // 6. Cargar tu modelo real (scene.gltf)
+            const loader = new GLTFLoader();
+            loader.load('./scene.gltf', (gltf) => {
+                moto = gltf.scene;
+                
+                // Ajusta la escala si el modelo aparece muy grande o muy pequeño en pantalla
+                moto.scale.set(1, 1, 1);
+                moto.position.set(0, 0, 0);
+
+                moto.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                scene.add(moto);
+
+                // Ocultar mensaje de carga cuando aparezca
+                const loadingDiv = document.getElementById('loading');
+                if (loadingDiv) loadingDiv.remove();
+
+            }, (xhr) => {
+                console.log((xhr.loaded / xhr.total * 100) + '% cargado');
+            }, (error) => {
+                console.error('Error al cargar el archivo GLTF:', error);
+                document.getElementById('loading').innerText = 'Error al cargar la moto. Revisa la consola.';
+            });
+
+            // 7. Eventos de Teclado
+            window.addEventListener('keydown', (e) => handleKeys(e, true));
+            window.addEventListener('keyup', (e) => handleKeys(e, false));
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function handleKeys(e, isDown) {
+            switch(e.code) {
+                case 'KeyW':
+                case 'ArrowUp': keys.forward = isDown; break;
+                case 'KeyS':
+                case 'ArrowDown': keys.backward = isDown; break;
+                case 'KeyA':
+                case 'ArrowLeft': keys.left = isDown; break;
+                case 'KeyD':
+                case 'ArrowRight': keys.right = isDown; break;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (moto) {
+                if (keys.forward) {
+                    speed = Math.min(speed + 0.012, maxSpeed);
+                } else if (keys.backward) {
+                    speed = Math.max(speed - 0.012, -maxSpeed / 2);
+                } else {
+                    speed *= 0.92; // Desaceleración
+                }
+
+                if (keys.left) moto.rotation.y += turnSpeed * (speed / maxSpeed);
+                if (keys.right) moto.rotation.y -= turnSpeed * (speed / maxSpeed);
+
+                moto.translateZ(speed);
+
+                // Cámara en tercera persona siguiendo a tu moto
+                const offset = new THREE.Vector3(0, 3.5, -7).applyAxisAngle(new THREE.Vector3(0, 1, 0), moto.rotation.y);
+                const targetCameraPos = moto.position.clone().add(offset);
+                
+                camera.position.lerp(targetCameraPos, 0.1);
+                camera.lookAt(moto.position.clone().add(new THREE.Vector3(0, 1, 0)));
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
