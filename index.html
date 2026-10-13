@@ -2,52 +2,79 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.5">
-    <title>Juego de Motocross con Modelo Real</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motocross Mountain Offroad 3D</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #111;
-            font-family: sans-serif;
+            background-color: #73a8c6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
         }
-        #info {
+        #hud {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            color: white;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 15px 20px;
-            border-radius: 10px;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            background: rgba(40, 50, 40, 0.85);
+            padding: 20px 30px;
+            border-radius: 16px;
             pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
             z-index: 10;
+            border: 2px solid #8cb369;
+            backdrop-filter: blur(8px);
         }
-        h1 { font-size: 18px; margin: 0 0 8px 0; color: #ff5722; }
-        p { font-size: 13px; margin: 3px 0; color: #ddd; }
+        h1 { font-size: 22px; margin: 0 0 8px 0; color: #f4d35e; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        p { font-size: 13px; margin: 4px 0; color: #e9edc9; }
+        #score-board {
+            font-size: 26px;
+            font-weight: bold;
+            color: #90be6d;
+            margin-top: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
         #loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            background: rgba(0,0,0,0.8);
-            padding: 20px 40px;
-            border-radius: 10px;
+            color: #fff;
+            font-size: 26px;
+            font-weight: bold;
+            background: rgba(40, 50, 40, 0.95);
+            padding: 25px 50px;
+            border-radius: 14px;
+            border: 2px solid #f4d35e;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
             z-index: 100;
+            letter-spacing: 1px;
+        }
+        #crash {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f94144;
+            font-size: 44px;
+            font-weight: bold;
+            display: none;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+            z-index: 100;
+            letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
 
-    <div id="loading">Cargando modelo de la moto...</div>
+    <div id="loading">CARGANDO TEXTURA AVIF...</div>
+    <div id="crash">¡IMPACTO! (-10 PTS)</div>
 
-    <div id="info">
-        <h1>Motocross - Honda Bros / CRF</h1>
-        <p><b>W / S</b> o <b>Flechas Arriba/Abajo</b>: Acelerar / Frenar</p>
-        <p><b>A / D</b> o <b>Flechas Izq/Der</b>: Girar</p>
+    <div id="hud">
+        <h1>Motocross Mountain</h1>
+        <p><b>W / S</b>: Acelerar / Frenar | <b>A / D</b>: Girar</p>
+        <div id="score-board">PUNTOS: <span id="score">0</span></div>
     </div>
 
     <!-- Importar Three.js y GLTFLoader desde CDN -->
@@ -64,18 +91,26 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        let scene, camera, renderer, moto;
+        let scene, camera, renderer, motoModel;
         let keys = { forward: false, backward: false, left: false, right: false };
-        let speed = 0, maxSpeed = 0.5, turnSpeed = 0.035;
+        let speed = 0, maxSpeed = 0.7, turnSpeed = 0.04;
+        let obstacles = [];
+        let collectibles = [];
+        let trackSegments = [];
+        const segmentLength = 200;
+        const trackWidth = 26;
+        let score = 0;
+        let rockSceneTemplate = null;
+        let roadMaterial = null;
 
         init();
         animate();
 
         function init() {
-            // 1. Escena y Niebla
+            // 1. Escena y Cielo Natural
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
-            scene.fog = new THREE.FogExp2(0x87ceeb, 0.01);
+            scene.background = new THREE.Color(0x73a8c6);
+            scene.fog = new THREE.FogExp2(0x73a8c6, 0.008);
 
             // 2. Cámara
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -87,59 +122,180 @@
             document.body.appendChild(renderer.domElement);
 
             // 4. Luces
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            dirLight.position.set(50, 100, 50);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
+            const sunLight = new THREE.DirectionalLight(0xfffaed, 1.4);
+            sunLight.position.set(50, 100, 50);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
 
-            // 5. Suelo y Pista
-            const floorGeo = new THREE.PlaneGeometry(1500, 1500);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x4a7c2d, roughness: 0.9 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
+            // 5. Material de la carretera con la textura AVIF exacta
+            roadMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff, 
+                roughness: 0.8, 
+                metalness: 0.1 
+            });
 
-            const grid = new THREE.GridHelper(1500, 150, 0x333333, 0x555555);
-            grid.position.y = 0.02;
-            scene.add(grid);
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load('71560063-brown-ground-texture.jpg', (texture) => {
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(1, 25); // Ajusta la repetición longitudinal de la pista
+                roadMaterial.map = texture;
+                roadMaterial.needsUpdate = true;
+            }, undefined, (err) => {
+                console.error('Error al cargar la textura AVIF:', err);
+            });
 
-            // 6. Cargar tu modelo real (scene.gltf)
             const loader = new GLTFLoader();
-            loader.load('./scene.gltf', (gltf) => {
-                moto = gltf.scene;
-                
-                // Ajusta la escala si el modelo aparece muy grande o muy pequeño en pantalla
-                moto.scale.set(1, 1, 1);
-                moto.position.set(0, 0, 0);
+            let assetsLoaded = 0;
 
-                moto.traverse((child) => {
+            function checkAllLoaded() {
+                assetsLoaded++;
+                if (assetsLoaded >= 2) {
+                    for (let i = -2; i < 5; i++) {
+                        createTrackSegment(i * segmentLength);
+                    }
+                    const loadingDiv = document.getElementById('loading');
+                    if (loadingDiv) loadingDiv.remove();
+                }
+            }
+
+            // Cargar modelo de roca
+            loader.load('./roca/scene.gltf', (gltf) => {
+                rockSceneTemplate = gltf.scene;
+                checkAllLoaded();
+            }, undefined, () => {
+                checkAllLoaded();
+            });
+
+            // Cargar personaje/moto unificado
+            loader.load('./personaje/scene.gltf', (gltf) => {
+                motoModel = gltf.scene;
+                motoModel.scale.set(0.05, 0.05, 0.05); 
+                motoModel.position.set(0, 1.7, 0); 
+                motoModel.rotation.y = 0;
+
+                motoModel.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
                         child.receiveShadow = true;
                     }
                 });
 
-                scene.add(moto);
+                // Dorsal con número 727 en la espalda
+                const canvasNum = document.createElement('canvas');
+                canvasNum.width = 256;
+                canvasNum.height = 256;
+                const ctx = canvasNum.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = '#dc143c';
+                ctx.lineWidth = 16;
+                ctx.strokeRect(12, 12, 232, 232);
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 110px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('727', 128, 128);
 
-                // Ocultar mensaje de carga cuando aparezca
-                const loadingDiv = document.getElementById('loading');
-                if (loadingDiv) loadingDiv.remove();
+                const textureNum = new THREE.CanvasTexture(canvasNum);
+                const plateGeo = new THREE.PlaneGeometry(5, 5);
+                const plateMat = new THREE.MeshBasicMaterial({ map: textureNum, side: THREE.DoubleSide });
+                const numberPlate = new THREE.Mesh(plateGeo, plateMat);
+                
+                numberPlate.position.set(0, 12, -4);
+                numberPlate.rotation.y = Math.PI; 
+                motoModel.add(numberPlate);
 
-            }, (xhr) => {
-                console.log((xhr.loaded / xhr.total * 100) + '% cargado');
-            }, (error) => {
-                console.error('Error al cargar el archivo GLTF:', error);
-                document.getElementById('loading').innerText = 'Error al cargar la moto. Revisa la consola.';
+                scene.add(motoModel);
+                checkAllLoaded();
+
+            }, undefined, (error) => {
+                console.error('Error al cargar el personaje:', error);
+                document.getElementById('loading').innerText = 'Error al cargar ./personaje/scene.gltf';
             });
 
-            // 7. Eventos de Teclado
             window.addEventListener('keydown', (e) => handleKeys(e, true));
             window.addEventListener('keyup', (e) => handleKeys(e, false));
             window.addEventListener('resize', onWindowResize);
+        }
+
+        // Crear segmentos con carretera, paredes y pasto
+        function createTrackSegment(zPosition) {
+            const group = new THREE.Group();
+
+            const roadGeo = new THREE.PlaneGeometry(trackWidth, segmentLength);
+            const road = new THREE.Mesh(roadGeo, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            road.position.set(0, 0.01, 0);
+            road.receiveShadow = true;
+            group.add(road);
+
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x3d3328, roughness: 0.9 });
+            const wallGeo = new THREE.BoxGeometry(1.5, 2.5, segmentLength);
+
+            const wallLeft = new THREE.Mesh(wallGeo, wallMat);
+            wallLeft.position.set(-trackWidth / 2 - 0.75, 1.25, 0);
+            wallLeft.castShadow = true;
+            wallLeft.receiveShadow = true;
+            group.add(wallLeft);
+            obstacles.push(wallLeft);
+
+            const wallRight = new THREE.Mesh(wallGeo, wallMat);
+            wallRight.position.set(trackWidth / 2 + 0.75, 1.25, 0);
+            wallRight.castShadow = true;
+            wallRight.receiveShadow = true;
+            group.add(wallRight);
+            obstacles.push(wallRight);
+
+            const grassGeo = new THREE.PlaneGeometry(50, segmentLength);
+            const grassMat = new THREE.MeshStandardMaterial({ color: 0x4f772d, roughness: 0.8 });
+            
+            const grassLeft = new THREE.Mesh(grassGeo, grassMat);
+            grassLeft.rotation.x = -Math.PI / 2;
+            grassLeft.position.set(-trackWidth / 2 - 26, 0, 0);
+            group.add(grassLeft);
+
+            const grassRight = new THREE.Mesh(grassGeo, grassMat);
+            grassRight.rotation.x = -Math.PI / 2;
+            grassRight.position.set(trackWidth / 2 + 26, 0, 0);
+            group.add(grassRight);
+
+            const coinGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.3, 24);
+            const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd166, metalness: 0.8, roughness: 0.2, emissive: 0x443300 });
+
+            for (let z = -segmentLength / 2 + 30; z < segmentLength / 2; z += 40) {
+                if (rockSceneTemplate) {
+                    const rock = rockSceneTemplate.clone();
+                    rock.scale.set(1.2, 1.2, 1.2);
+                    rock.position.set((Math.random() - 0.5) * (trackWidth - 4), 0, z);
+                    rock.rotation.y = Math.random() * Math.PI;
+
+                    rock.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    group.add(rock);
+                    obstacles.push(rock);
+                }
+
+                const coin = new THREE.Mesh(coinGeo, coinMat);
+                coin.rotation.x = Math.PI / 2;
+                coin.position.set((Math.random() - 0.5) * (trackWidth - 4), 1.5, z + 15);
+                group.add(coin);
+                collectibles.push(coin);
+            }
+
+            group.position.z = zPosition;
+            scene.add(group);
+            trackSegments.push(group);
         }
 
         function handleKeys(e, isDown) {
@@ -155,29 +311,71 @@
             }
         }
 
+        function updateGameLogic() {
+            if (!motoModel) return;
+
+            collectibles.forEach(coin => {
+                coin.rotation.z += 0.04;
+            });
+
+            const motoBox = new THREE.Box3().setFromObject(motoModel);
+            motoBox.expandByScalar(-0.4);
+
+            for (let obs of obstacles) {
+                const obsBox = new THREE.Box3().setFromObject(obs);
+                if (motoBox.intersectsBox(obsBox)) {
+                    speed = -speed * 0.4;
+                    score = Math.max(0, score - 10);
+                    document.getElementById('score').innerText = score;
+                    
+                    const crashDiv = document.getElementById('crash');
+                    crashDiv.style.display = 'block';
+                    setTimeout(() => { crashDiv.style.display = 'none'; }, 500);
+                    break;
+                }
+            }
+
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const coin = collectibles[i];
+                const coinBox = new THREE.Box3().setFromObject(coin);
+                if (motoBox.intersectsBox(coinBox)) {
+                    score += 50;
+                    document.getElementById('score').innerText = score;
+                    scene.remove(coin);
+                    collectibles.splice(i, 1);
+                }
+            }
+        }
+
         function animate() {
             requestAnimationFrame(animate);
 
-            if (moto) {
+            if (motoModel) {
                 if (keys.forward) {
-                    speed = Math.min(speed + 0.012, maxSpeed);
+                    speed = Math.min(speed + 0.015, maxSpeed);
                 } else if (keys.backward) {
-                    speed = Math.max(speed - 0.012, -maxSpeed / 2);
+                    speed = Math.max(speed - 0.015, -maxSpeed / 2);
                 } else {
-                    speed *= 0.92; // Desaceleración
+                    speed *= 0.92; 
                 }
 
-                if (keys.left) moto.rotation.y += turnSpeed * (speed / maxSpeed);
-                if (keys.right) moto.rotation.y -= turnSpeed * (speed / maxSpeed);
+                if (keys.left) motoModel.rotation.y += turnSpeed * (speed / maxSpeed);
+                if (keys.right) motoModel.rotation.y -= turnSpeed * (speed / maxSpeed);
 
-                moto.translateZ(speed);
+                motoModel.translateX(speed);
 
-                // Cámara en tercera persona siguiendo a tu moto
-                const offset = new THREE.Vector3(0, 3.5, -7).applyAxisAngle(new THREE.Vector3(0, 1, 0), moto.rotation.y);
-                const targetCameraPos = moto.position.clone().add(offset);
+                updateGameLogic();
+
+                const currentSegmentZ = Math.floor(motoModel.position.x / segmentLength);
+                if (currentSegmentZ > trackSegments.length - 4) {
+                    createTrackSegment(trackSegments.length * segmentLength);
+                }
+
+                const offset = new THREE.Vector3(-7, 3.5, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), motoModel.rotation.y);
+                const targetCameraPos = motoModel.position.clone().add(offset);
                 
-                camera.position.lerp(targetCameraPos, 0.1);
-                camera.lookAt(moto.position.clone().add(new THREE.Vector3(0, 1, 0)));
+                camera.position.lerp(targetCameraPos, 0.12);
+                camera.lookAt(motoModel.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
             }
 
             renderer.render(scene, camera);

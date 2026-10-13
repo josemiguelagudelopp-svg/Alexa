@@ -1,0 +1,11 @@
+Model Information:
+* title:	Motocross bike
+* source:	https://sketchfab.com/3d-models/motocross-bike-afc8368a6eed44c290470c2117e50d51
+* author:	Aeroux Games 3D (https://sketchfab.com/aerouxgames)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Motocross bike" (https://sketchfab.com/3d-models/motocross-bike-afc8368a6eed44c290470c2117e50d51) by Aeroux Games 3D (https://sketchfab.com/aerouxgames) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
