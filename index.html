@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Motocross Mountain Offroad 3D</title>
     <style>
         body {
@@ -11,29 +11,30 @@
             background-color: #73a8c6;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
         #hud {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            left: 15px;
             color: #fff;
             background: rgba(40, 50, 40, 0.85);
-            padding: 20px 30px;
-            border-radius: 16px;
+            padding: 12px 20px;
+            border-radius: 12px;
             pointer-events: none;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
             z-index: 10;
             border: 2px solid #8cb369;
             backdrop-filter: blur(8px);
         }
-        h1 { font-size: 22px; margin: 0 0 8px 0; color: #f4d35e; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        p { font-size: 13px; margin: 4px 0; color: #e9edc9; }
+        h1 { font-size: 16px; margin: 0 0 4px 0; color: #f4d35e; text-transform: uppercase; letter-spacing: 1px; }
+        p { font-size: 11px; margin: 2px 0; color: #e9edc9; }
         #score-board {
-            font-size: 26px;
+            font-size: 20px;
             font-weight: bold;
             color: #90be6d;
-            margin-top: 12px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-top: 6px;
         }
         #loading {
             position: absolute;
@@ -41,40 +42,91 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
-            font-size: 26px;
+            font-size: 20px;
             font-weight: bold;
             background: rgba(40, 50, 40, 0.95);
-            padding: 25px 50px;
+            padding: 20px 40px;
             border-radius: 14px;
             border: 2px solid #f4d35e;
             box-shadow: 0 0 30px rgba(0,0,0,0.6);
             z-index: 100;
-            letter-spacing: 1px;
+            text-align: center;
         }
         #crash {
             position: absolute;
-            top: 35%;
+            top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: #f94144;
-            font-size: 44px;
+            font-size: 32px;
             font-weight: bold;
             display: none;
             text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
             z-index: 100;
-            letter-spacing: 2px;
+        }
+
+        /* Controles Táctiles en Pantalla para Celular */
+        .touch-controls {
+            position: absolute;
+            bottom: 25px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            box-sizing: border-box;
+            z-index: 50;
+            pointer-events: none;
+        }
+        .control-group {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        .btn-touch {
+            width: 75px;
+            height: 75px;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            outline: none;
+        }
+        .btn-touch:active, .btn-touch.active {
+            background: rgba(244, 211, 94, 0.6);
+            border-color: #f4d35e;
+            transform: scale(0.95);
         }
     </style>
 </head>
 <body>
 
-    <div id="loading">CARGANDO TEXTURA AVIF...</div>
+    <div id="loading">CARGANDO JUEGO MÓVIL...</div>
     <div id="crash">¡IMPACTO! (-10 PTS)</div>
 
     <div id="hud">
         <h1>Motocross Mountain</h1>
-        <p><b>W / S</b>: Acelerar / Frenar | <b>A / D</b>: Girar</p>
+        <p>Usa los controles en pantalla</p>
         <div id="score-board">PUNTOS: <span id="score">0</span></div>
+    </div>
+
+    <!-- Botones Táctiles para Celular -->
+    <div class="touch-controls">
+        <div class="control-group">
+            <button class="btn-touch" id="btn-left">◀</button>
+            <button class="btn-touch" id="btn-right">▶</button>
+        </div>
+        <div class="control-group">
+            <button class="btn-touch" id="btn-back">▼</button>
+            <button class="btn-touch" id="btn-fwd">▲</button>
+        </div>
     </div>
 
     <!-- Importar Three.js y GLTFLoader desde CDN -->
@@ -118,6 +170,7 @@
             // 3. Renderizador
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
@@ -132,7 +185,7 @@
             sunLight.shadow.mapSize.height = 2048;
             scene.add(sunLight);
 
-            // 5. Material de la carretera con la textura AVIF exacta
+            // 5. Material de la carretera con textura AVIF
             roadMaterial = new THREE.MeshStandardMaterial({ 
                 color: 0xffffff, 
                 roughness: 0.8, 
@@ -143,7 +196,7 @@
             textureLoader.load('71560063-brown-ground-texture.jpg', (texture) => {
                 texture.wrapS = THREE.RepeatWrapping;
                 texture.wrapT = THREE.RepeatWrapping;
-                texture.repeat.set(1, 25); // Ajusta la repetición longitudinal de la pista
+                texture.repeat.set(1, 25); 
                 roadMaterial.map = texture;
                 roadMaterial.needsUpdate = true;
             }, undefined, (err) => {
@@ -219,9 +272,28 @@
                 document.getElementById('loading').innerText = 'Error al cargar ./personaje/scene.gltf';
             });
 
+            setupTouchControls();
             window.addEventListener('keydown', (e) => handleKeys(e, true));
             window.addEventListener('keyup', (e) => handleKeys(e, false));
             window.addEventListener('resize', onWindowResize);
+        }
+
+        // Configurar eventos táctiles para los botones virtuales
+        function setupTouchControls() {
+            const bindButton = (id, keyName) => {
+                const btn = document.getElementById(id);
+                ['touchstart', 'mousedown'].forEach(evt => {
+                    btn.addEventListener(evt, (e) => { e.preventDefault(); keys[keyName] = true; btn.classList.add('active'); });
+                });
+                ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+                    btn.addEventListener(evt, (e) => { e.preventDefault(); keys[keyName] = false; btn.classList.remove('active'); });
+                });
+            };
+
+            bindButton('btn-left', 'left');
+            bindButton('btn-right', 'right');
+            bindButton('btn-fwd', 'forward');
+            bindButton('btn-back', 'backward');
         }
 
         // Crear segmentos con carretera, paredes y pasto
