@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Motocross Mountain Offroad 3D - Corazones Coleccionables</title>
+    <title>Motocross Mountain Offroad 3D - Para Alexandra #727</title>
     <style>
         body {
             margin: 0;
@@ -14,6 +14,87 @@
             -webkit-user-select: none;
             touch-action: none;
         }
+
+        /* Pantalla de Inicio / Menú */
+        #menu-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1b4332, #2d6a4f);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #menu-screen h1 {
+            font-size: 32px;
+            color: #f4d35e;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+        #menu-screen .numero-badge {
+            font-size: 55px;
+            font-weight: bold;
+            color: #ff477e;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 30px;
+            border-radius: 20px;
+            margin: 15px 0;
+            border: 3px solid #ff477e;
+            box-shadow: 0 0 20px rgba(255, 71, 126, 0.4);
+        }
+        #menu-screen p.quote {
+            font-size: 16px;
+            color: #e9edc9;
+            max-width: 500px;
+            margin: 15px 0 25px 0;
+            line-height: 1.5;
+            font-style: italic;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.6);
+        }
+        #btn-play {
+            background: #ff477e;
+            color: white;
+            border: none;
+            padding: 16px 45px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 35px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255, 71, 126, 0.6);
+            transition: transform 0.2s, background 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #btn-play:hover {
+            transform: scale(1.05);
+            background: #ff6b95;
+        }
+
+        /* Canvas para la lluvia de corazones del menú */
+        #menu-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .menu-content {
+            position: relative;
+            z-index: 2;
+        }
+
         #hud {
             position: absolute;
             top: 15px;
@@ -27,15 +108,42 @@
             z-index: 10;
             border: 2px solid #8cb369;
             backdrop-filter: blur(8px);
+            display: none;
         }
-        h1 { font-size: 16px; margin: 0 0 4px 0; color: #f4d35e; text-transform: uppercase; letter-spacing: 1px; }
-        p { font-size: 11px; margin: 2px 0; color: #e9edc9; }
+        h1.hud-title { font-size: 16px; margin: 0 0 4px 0; color: #f4d35e; text-transform: uppercase; letter-spacing: 1px; }
+        .hud-sub { font-size: 11px; margin: 2px 0; color: #e9edc9; }
         #score-board {
             font-size: 20px;
             font-weight: bold;
             color: #ff477e;
             margin-top: 6px;
         }
+
+        /* Mensaje Motivacional en Juego */
+        #motivational-popup {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(255, 71, 126, 0.95);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(255, 71, 126, 0.8);
+            border: 2px solid #fff;
+            z-index: 100;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #motivational-popup.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
         #loading {
             position: absolute;
             top: 50%;
@@ -51,6 +159,7 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.6);
             z-index: 100;
             text-align: center;
+            display: none;
         }
         #crash {
             position: absolute;
@@ -76,6 +185,7 @@
             box-sizing: border-box;
             z-index: 50;
             pointer-events: none;
+            display: none;
         }
         .control-group {
             display: flex;
@@ -108,17 +218,29 @@
 </head>
 <body>
 
+    <!-- Interfaz de Inicio (Menú para Alexandra) -->
+    <div id="menu-screen">
+        <canvas id="menu-canvas"></canvas>
+        <div class="menu-content">
+            <h1>Motocross Mountain</h1>
+            <div class="numero-badge">#727</div>
+            <p class="quote">"727 no lo lleva nadie, porque solo hay una campeona digna de ese número."</p>
+            <button id="btn-play">¡A Correr, Alexandra!</button>
+        </div>
+    </div>
+
     <div id="loading">CARGANDO MUNDO...</div>
     <div id="crash">¡IMPACTO! (-10 PTS)</div>
+    <div id="motivational-popup">¡Vas a arrasar en la nacional, Alexandra! 💖</div>
 
     <div id="hud">
-        <h1>Motocross Mountain</h1>
-        <p>Circuito con Corazones</p>
+        <h1 class="hud-title">Motocross Mountain #727</h1>
+        <p class="hud-sub">Piloto: Alexandra</p>
         <div id="score-board">PUNTOS: <span id="score">0</span></div>
     </div>
 
     <!-- Botones Táctiles para Celular -->
-    <div class="touch-controls">
+    <div class="touch-controls" id="touch-ui">
         <div class="control-group">
             <button class="btn-touch" id="btn-left">◀</button>
             <button class="btn-touch" id="btn-right">▶</button>
@@ -143,6 +265,44 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+        // Animación de lluvia de corazones en el menú de inicio
+        const menuCanvas = document.getElementById('menu-canvas');
+        const mCtx = menuCanvas.getContext('2d');
+        function resizeMenuCanvas() {
+            menuCanvas.width = window.innerWidth;
+            menuCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeMenuCanvas);
+        resizeMenuCanvas();
+
+        let menuHearts = [];
+        for(let i=0; i<40; i++) {
+            menuHearts.push({
+                x: Math.random() * menuCanvas.width,
+                y: Math.random() * menuCanvas.height - menuCanvas.height,
+                size: Math.random() * 15 + 10,
+                speed: Math.random() * 2 + 1,
+                opacity: Math.random() * 0.7 + 0.3
+            });
+        }
+        function drawMenuRain() {
+            mCtx.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
+            mCtx.fillStyle = 'rgba(255, 71, 126, 0.6)';
+            menuHearts.forEach(h => {
+                mCtx.globalAlpha = h.opacity;
+                mCtx.font = `${h.size}px Arial`;
+                mCtx.fillText('❤️', h.x, h.y);
+                h.y += h.speed;
+                if(h.y > menuCanvas.height + 20) {
+                    h.y = -20;
+                    h.x = Math.random() * menuCanvas.width;
+                }
+            });
+            requestAnimationFrame(drawMenuRain);
+        }
+        drawMenuRain();
+
+        let gameStarted = false;
         let scene, camera, renderer, motoModel;
         let keys = { forward: false, backward: false, left: false, right: false };
         let speed = 0, maxSpeed = 0.65, turnSpeed = 0.045;
@@ -161,8 +321,25 @@
         let heartGeo = null;
         let heartMat = null;
 
-        init();
-        animate();
+        // Frases motivacionales para Alexandra
+        const motivationalMessages = [
+            "¡Esa corona nacional ya es tuya, Alexandra! 👑",
+            "¡Confía en tu talento y en tus manos, campeona! 💪",
+            "¡El número 727 brilla con fuerza en la pista! ✨",
+            "¡Los nervios son solo pasión, úsalos para ganar! 🔥",
+            "¡Cada curva y cada salto los dominas a la perfección! 🏍️",
+            "¡A dejar el alma en la pista, Alexandra! 💖",
+            "¡Nadie maneja como tú, eres la mejor! ⭐"
+        ];
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('touch-ui').style.display = 'flex';
+            gameStarted = true;
+            init();
+            animate();
+        });
 
         function init() {
             scene = new THREE.Scene();
@@ -205,7 +382,7 @@
                 roughness: 0.8 
             });
 
-            // Construir geometría 3D del Corazón
+            // Geometría del Corazón 3D
             const x = 0, y = 0;
             const heartShape = new THREE.Shape();
             heartShape.moveTo( x + 5, y + 5 );
@@ -367,7 +544,6 @@
             terrainRight.position.set(0, 0, trackWidth / 2 + 30);
             group.add(terrainRight);
 
-            // Fardos de paja continuos
             for (let x = -segmentLength / 2; x < segmentLength / 2; x += 6.5) {
                 if (pajaSceneTemplate) {
                     const pajaLeft = pajaSceneTemplate.clone();
@@ -400,7 +576,6 @@
                 }
             }
 
-            // Instanciar Corazones Coleccionables 3D
             for (let x = -segmentLength / 2 + 30; x < segmentLength / 2; x += 40) {
                 if (rockSceneTemplate) {
                     const rock = rockSceneTemplate.clone();
@@ -413,7 +588,7 @@
 
                 const heart = new THREE.Mesh(heartGeo, heartMat);
                 heart.scale.set(0.1, 0.1, 0.1);
-                heart.rotation.x = Math.PI; // Orientación correcta del corazón extruido
+                heart.rotation.x = Math.PI;
                 heart.position.set(x + 15, 1.2, (Math.random() - 0.5) * (trackWidth - 6));
                 group.add(heart);
                 collectibles.push({ mesh: heart, segmentGroup: group });
@@ -435,6 +610,19 @@
                 case 'KeyD':
                 case 'ArrowRight': keys.right = isDown; break;
             }
+        }
+
+        let popupTimeout = null;
+        function showMotivationalMessage() {
+            const popup = document.getElementById('motivational-popup');
+            const randomMsg = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+            popup.innerText = randomMsg;
+            popup.classList.add('show');
+
+            if (popupTimeout) clearTimeout(popupTimeout);
+            popupTimeout = setTimeout(() => {
+                popup.classList.remove('show');
+            }, 2500);
         }
 
         function updateGameLogic() {
@@ -473,6 +661,7 @@
                 if (distanceCoin < 2.5) {
                     score += 50;
                     document.getElementById('score').innerText = score;
+                    showMotivationalMessage(); // Mostrar mensaje motivacional al recoger corazón
                     item.segmentGroup.remove(item.mesh);
                     collectibles.splice(i, 1);
                 }
@@ -482,7 +671,7 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            if (motoModel) {
+            if (gameStarted && motoModel) {
                 if (keys.forward) {
                     speed = Math.min(speed + 0.015, maxSpeed);
                 } else if (keys.backward) {
