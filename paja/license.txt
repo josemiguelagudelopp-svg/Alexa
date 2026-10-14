@@ -1,0 +1,11 @@
+Model Information:
+* title:	hay bale
+* source:	https://sketchfab.com/3d-models/hay-bale-5e9da68f451a4f158b1d5bcb07b53665
+* author:	0800sofa (https://sketchfab.com/0800sofa)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "hay bale" (https://sketchfab.com/3d-models/hay-bale-5e9da68f451a4f158b1d5bcb07b53665) by 0800sofa (https://sketchfab.com/0800sofa) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
