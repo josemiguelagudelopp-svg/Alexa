@@ -309,7 +309,7 @@
         let obstacles = [];
         let collectibles = [];
         let trackSegments = [];
-        const segmentLength = 300; 
+        const segmentLength = 150; 
         const trackWidth = 24;     
         let score = 0;
         let rockSceneTemplate = null;
@@ -423,7 +423,8 @@
             function checkAllLoaded() {
                 assetsLoaded++;
                 if (assetsLoaded >= 4) {
-                    for (let i = 0; i < 5; i++) {
+                    // Generar suficientes segmentos iniciales para cubrir una gran distancia por delante
+                    for (let i = 0; i < 10; i++) {
                         createTrackSegment(i * segmentLength);
                     }
                     const loadingDiv = document.getElementById('loading');
@@ -458,7 +459,7 @@
             loader.load('./personaje/scene.gltf', (gltf) => {
                 motoModel = gltf.scene;
                 motoModel.scale.set(0.05, 0.05, 0.05); 
-                motoModel.position.set(-segmentLength / 2 + 10, 1.7, 0); // ¡Inicia justo en la punta del primer segmento!
+                motoModel.position.set(0, 1.7, 0); // Arranca exactamente en la salida del primer segmento
 
                 motoModel.traverse((child) => {
                     if (child.isMesh) {
@@ -684,10 +685,11 @@
                 motoModel.translateX(speed);
                 updateGameLogic();
 
+                // Generar nuevos segmentos con mayor anticipación y mantener un búfer amplio de pista
                 const currentSegmentX = Math.floor(motoModel.position.x / segmentLength);
-                if (currentSegmentX > trackSegments.length - 3) {
+                if (currentSegmentX > trackSegments.length - 6) {
                     createTrackSegment(trackSegments.length * segmentLength);
-                    if (trackSegments.length > 6) {
+                    if (trackSegments.length > 15) {
                         const oldSegment = trackSegments.shift();
                         scene.remove(oldSegment);
                         obstacles = obstacles.filter(o => o.segmentGroup !== oldSegment);
