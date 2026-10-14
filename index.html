@@ -276,7 +276,7 @@
         resizeMenuCanvas();
 
         let menuHearts = [];
-        for(let i=0; i<40; i++) {
+        for(let i=0; i<30; i++) {
             menuHearts.push({
                 x: Math.random() * menuCanvas.width,
                 y: Math.random() * menuCanvas.height - menuCanvas.height,
@@ -305,12 +305,12 @@
         let gameStarted = false;
         let scene, camera, renderer, motoModel;
         let keys = { forward: false, backward: false, left: false, right: false };
-        let speed = 0, maxSpeed = 0.65, turnSpeed = 0.045;
+        let speed = 0, maxSpeed = 0.95, turnSpeed = 0.055; // ¡Velocidad y giro aumentados para mayor dinamismo!
         let obstacles = [];
         let collectibles = [];
         let trackSegments = [];
-        const segmentLength = 100; // Longitud de la carretera más corta por segmento
-        const trackWidth = 24;     // Ancho normal de la pista
+        const segmentLength = 100; 
+        const trackWidth = 24;     
         let score = 0;
         let rockSceneTemplate = null;
         let treeSceneTemplate = null;
@@ -347,11 +347,12 @@
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
+            // Optimización para celulares: antialias desactivado y límite de pixelRatio para alto rendimiento
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.BasicShadowMap;
+            renderer.shadowMap.type = THREE.BasicShadowMap; // Sombra optimizada para móviles
             document.body.appendChild(renderer.domElement);
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
@@ -360,8 +361,8 @@
             const sunLight = new THREE.DirectionalLight(0xfffaed, 1.3);
             sunLight.position.set(40, 80, 40);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 512;
-            sunLight.shadow.mapSize.height = 512;
+            sunLight.shadow.mapSize.width = 256;  // Resolución ligera de sombras para evitar lag en celular
+            sunLight.shadow.mapSize.height = 256;
             scene.add(sunLight);
 
             roadMaterial = new THREE.MeshStandardMaterial({ 
@@ -542,7 +543,6 @@
             terrainRight.position.set(0, 0, trackWidth / 2 + 30);
             group.add(terrainRight);
 
-            // Fardos de paja colocados cada 12 pasos
             for (let x = -segmentLength / 2; x < segmentLength / 2; x += 12) {
                 if (pajaSceneTemplate) {
                     const pajaLeft = pajaSceneTemplate.clone();
@@ -672,11 +672,11 @@
 
             if (gameStarted && motoModel) {
                 if (keys.forward) {
-                    speed = Math.min(speed + 0.015, maxSpeed);
+                    speed = Math.min(speed + 0.025, maxSpeed); // Aceleración más rápida
                 } else if (keys.backward) {
-                    speed = Math.max(speed - 0.015, -maxSpeed / 2);
+                    speed = Math.max(speed - 0.025, -maxSpeed / 2);
                 } else {
-                    speed *= 0.92; 
+                    speed *= 0.94; 
                 }
 
                 if (keys.left) motoModel.rotation.y += turnSpeed * (speed / maxSpeed);
@@ -688,7 +688,7 @@
                 const currentSegmentX = Math.floor(motoModel.position.x / segmentLength);
                 if (currentSegmentX > trackSegments.length - 3) {
                     createTrackSegment(trackSegments.length * segmentLength);
-                    if (trackSegments.length > 12) {
+                    if (trackSegments.length > 10) {
                         const oldSegment = trackSegments.shift();
                         scene.remove(oldSegment);
                         obstacles = obstacles.filter(o => o.segmentGroup !== oldSegment);
