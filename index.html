@@ -218,7 +218,7 @@
 </head>
 <body>
 
-    <!-- Interfaz de Inicio (Menú para Alexandra) -->
+    <!-- Interfaz de Inicio -->
     <div id="menu-screen">
         <canvas id="menu-canvas"></canvas>
         <div class="menu-content">
@@ -265,7 +265,7 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // Animación de lluvia de corazones en el menú de inicio
+        // Lluvia de corazones en el menú
         const menuCanvas = document.getElementById('menu-canvas');
         const mCtx = menuCanvas.getContext('2d');
         function resizeMenuCanvas() {
@@ -309,8 +309,8 @@
         let obstacles = [];
         let collectibles = [];
         let trackSegments = [];
-        const segmentLength = 300; 
-        const trackWidth = 24;
+        const segmentLength = 100; // Longitud de la carretera más corta por segmento
+        const trackWidth = 24;     // Ancho normal de la pista
         let score = 0;
         let rockSceneTemplate = null;
         let treeSceneTemplate = null;
@@ -321,7 +321,6 @@
         let heartGeo = null;
         let heartMat = null;
 
-        // Frases motivacionales para Alexandra
         const motivationalMessages = [
             "¡Esa corona nacional ya es tuya, Alexandra! 👑",
             "¡Confía en tu talento y en tus manos, campeona! 💪",
@@ -382,7 +381,6 @@
                 roughness: 0.8 
             });
 
-            // Geometría del Corazón 3D
             const x = 0, y = 0;
             const heartShape = new THREE.Shape();
             heartShape.moveTo( x + 5, y + 5 );
@@ -425,7 +423,7 @@
             function checkAllLoaded() {
                 assetsLoaded++;
                 if (assetsLoaded >= 4) {
-                    for (let i = -1; i < 4; i++) {
+                    for (let i = -1; i < 8; i++) {
                         createTrackSegment(i * segmentLength);
                     }
                     const loadingDiv = document.getElementById('loading');
@@ -544,7 +542,8 @@
             terrainRight.position.set(0, 0, trackWidth / 2 + 30);
             group.add(terrainRight);
 
-            for (let x = -segmentLength / 2; x < segmentLength / 2; x += 6.5) {
+            // Fardos de paja colocados cada 12 pasos
+            for (let x = -segmentLength / 2; x < segmentLength / 2; x += 12) {
                 if (pajaSceneTemplate) {
                     const pajaLeft = pajaSceneTemplate.clone();
                     pajaLeft.scale.set(200.0, 200.0, 200.0);
@@ -562,7 +561,7 @@
                 }
             }
 
-            for (let x = -segmentLength / 2; x < segmentLength / 2; x += 45) {
+            for (let x = -segmentLength / 2; x < segmentLength / 2; x += 35) {
                 if (treeSceneTemplate) {
                     const treeLeft = treeSceneTemplate.clone();
                     treeLeft.scale.set(2, 2, 2);
@@ -576,7 +575,7 @@
                 }
             }
 
-            for (let x = -segmentLength / 2 + 30; x < segmentLength / 2; x += 40) {
+            for (let x = -segmentLength / 2 + 20; x < segmentLength / 2; x += 30) {
                 if (rockSceneTemplate) {
                     const rock = rockSceneTemplate.clone();
                     rock.scale.set(1.2, 1.2, 1.2);
@@ -589,7 +588,7 @@
                 const heart = new THREE.Mesh(heartGeo, heartMat);
                 heart.scale.set(0.1, 0.1, 0.1);
                 heart.rotation.x = Math.PI;
-                heart.position.set(x + 15, 1.2, (Math.random() - 0.5) * (trackWidth - 6));
+                heart.position.set(x + 10, 1.2, (Math.random() - 0.5) * (trackWidth - 6));
                 group.add(heart);
                 collectibles.push({ mesh: heart, segmentGroup: group });
             }
@@ -661,7 +660,7 @@
                 if (distanceCoin < 2.5) {
                     score += 50;
                     document.getElementById('score').innerText = score;
-                    showMotivationalMessage(); // Mostrar mensaje motivacional al recoger corazón
+                    showMotivationalMessage();
                     item.segmentGroup.remove(item.mesh);
                     collectibles.splice(i, 1);
                 }
@@ -689,7 +688,7 @@
                 const currentSegmentX = Math.floor(motoModel.position.x / segmentLength);
                 if (currentSegmentX > trackSegments.length - 3) {
                     createTrackSegment(trackSegments.length * segmentLength);
-                    if (trackSegments.length > 6) {
+                    if (trackSegments.length > 12) {
                         const oldSegment = trackSegments.shift();
                         scene.remove(oldSegment);
                         obstacles = obstacles.filter(o => o.segmentGroup !== oldSegment);
