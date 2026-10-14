@@ -305,11 +305,11 @@
         let gameStarted = false;
         let scene, camera, renderer, motoModel;
         let keys = { forward: false, backward: false, left: false, right: false };
-        let speed = 0, maxSpeed = 0.95, turnSpeed = 0.055; // ¡Velocidad y giro aumentados para mayor dinamismo!
+        let speed = 0, maxSpeed = 0.95, turnSpeed = 0.055; 
         let obstacles = [];
         let collectibles = [];
         let trackSegments = [];
-        const segmentLength = 100; 
+        const segmentLength = 300; 
         const trackWidth = 24;     
         let score = 0;
         let rockSceneTemplate = null;
@@ -324,11 +324,11 @@
         const motivationalMessages = [
             "¡Esa corona nacional ya es tuya, Alexandra! 👑",
             "¡Confía en tu talento y en tus manos, campeona! 💪",
-            "¡El número 727 brilla con fuerza en la pista! ✨",
+            "¡El número 727 impone! ✨",
             "¡Los nervios son solo pasión, úsalos para ganar! 🔥",
-            "¡Cada curva y cada salto los dominas a la perfección! 🏍️",
-            "¡A dejar el alma en la pista, Alexandra! 💖",
-            "¡Nadie maneja como tú, eres la mejor! ⭐"
+            "¡Alexa, Alexa, Alexa...! 🏍️",
+            "¡Eres tú contra tú! 💖",
+            "¡Cada entrenamiento deja huella! ⭐"
         ];
 
         document.getElementById('btn-play').addEventListener('click', () => {
@@ -347,12 +347,11 @@
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-            // Optimización para celulares: antialias desactivado y límite de pixelRatio para alto rendimiento
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.BasicShadowMap; // Sombra optimizada para móviles
+            renderer.shadowMap.type = THREE.BasicShadowMap; 
             document.body.appendChild(renderer.domElement);
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
@@ -361,7 +360,7 @@
             const sunLight = new THREE.DirectionalLight(0xfffaed, 1.3);
             sunLight.position.set(40, 80, 40);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 256;  // Resolución ligera de sombras para evitar lag en celular
+            sunLight.shadow.mapSize.width = 256;  
             sunLight.shadow.mapSize.height = 256;
             scene.add(sunLight);
 
@@ -424,7 +423,7 @@
             function checkAllLoaded() {
                 assetsLoaded++;
                 if (assetsLoaded >= 4) {
-                    for (let i = -1; i < 8; i++) {
+                    for (let i = 0; i < 5; i++) {
                         createTrackSegment(i * segmentLength);
                     }
                     const loadingDiv = document.getElementById('loading');
@@ -459,7 +458,7 @@
             loader.load('./personaje/scene.gltf', (gltf) => {
                 motoModel = gltf.scene;
                 motoModel.scale.set(0.05, 0.05, 0.05); 
-                motoModel.position.set(0, 1.7, 0); 
+                motoModel.position.set(-segmentLength / 2 + 10, 1.7, 0); // ¡Inicia justo en la punta del primer segmento!
 
                 motoModel.traverse((child) => {
                     if (child.isMesh) {
@@ -672,7 +671,7 @@
 
             if (gameStarted && motoModel) {
                 if (keys.forward) {
-                    speed = Math.min(speed + 0.025, maxSpeed); // Aceleración más rápida
+                    speed = Math.min(speed + 0.025, maxSpeed); 
                 } else if (keys.backward) {
                     speed = Math.max(speed - 0.025, -maxSpeed / 2);
                 } else {
@@ -688,7 +687,7 @@
                 const currentSegmentX = Math.floor(motoModel.position.x / segmentLength);
                 if (currentSegmentX > trackSegments.length - 3) {
                     createTrackSegment(trackSegments.length * segmentLength);
-                    if (trackSegments.length > 10) {
+                    if (trackSegments.length > 6) {
                         const oldSegment = trackSegments.shift();
                         scene.remove(oldSegment);
                         obstacles = obstacles.filter(o => o.segmentGroup !== oldSegment);
