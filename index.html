@@ -265,7 +265,7 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // Lluvia de corazones en el menú (reducida en cantidad para optimizar)
+        // Lluvia de corazones en el menú
         const menuCanvas = document.getElementById('menu-canvas');
         const mCtx = menuCanvas.getContext('2d');
         function resizeMenuCanvas() {
@@ -349,7 +349,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0)); // Reducido a 1.0 para rendimiento máximo en móviles
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.BasicShadowMap; 
             document.body.appendChild(renderer.domElement);
@@ -360,7 +360,7 @@
             const sunLight = new THREE.DirectionalLight(0xfffaed, 1.3);
             sunLight.position.set(40, 80, 40);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 128;  // Sombra ultraligera para celular
+            sunLight.shadow.mapSize.width = 128;  
             sunLight.shadow.mapSize.height = 128;
             scene.add(sunLight);
 
@@ -381,15 +381,16 @@
                 roughness: 0.8 
             });
 
+            // Geometría corregida: lóbulos hacia arriba, punta hacia abajo de forma natural
             const x = 0, y = 0;
             const heartShape = new THREE.Shape();
-            heartShape.moveTo( x + 5, y + 5 );
-            heartShape.bezierCurveTo( x + 5, y + 5, x + 4, y, x, y );
-            heartShape.bezierCurveTo( x - 6, y, x - 6, y + 7, x - 6, y + 7 );
-            heartShape.bezierCurveTo( x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19 );
-            heartShape.bezierCurveTo( x + 13, y + 15.4, x + 16, y + 11, x + 16, y + 7 );
-            heartShape.bezierCurveTo( x + 16, y + 7, x + 16, y, x + 10, y );
-            heartShape.bezierCurveTo( x + 7, y, x + 5, y + 5, x + 5, y + 5 );
+            heartShape.moveTo( x, y );
+            heartShape.bezierCurveTo( x, y + 3, x - 5, y + 10, x - 10, y + 10 );
+            heartShape.bezierCurveTo( x - 16, y + 10, x - 16, y + 2, x - 16, y + 2 );
+            heartShape.bezierCurveTo( x - 16, y - 4, x - 10, y - 9, x, y - 15 );
+            heartShape.bezierCurveTo( x + 10, y - 9, x + 16, y - 4, x + 16, y + 2 );
+            heartShape.bezierCurveTo( x + 16, y + 2, x + 16, y + 10, x + 10, y + 10 );
+            heartShape.bezierCurveTo( x + 5, y + 10, x, y + 3, x, y );
 
             const extrudeSettings = { depth: 2, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 1, bevelThickness: 1 };
             heartGeo = new THREE.ExtrudeGeometry( heartShape, extrudeSettings );
@@ -542,7 +543,6 @@
             terrainRight.position.set(0, 0, trackWidth / 2 + 30);
             group.add(terrainRight);
 
-            // Densidad de fardos reducida (cada 24 pasos en lugar de 12)
             for (let x = -segmentLength / 2; x < segmentLength / 2; x += 24) {
                 if (pajaSceneTemplate) {
                     const pajaLeft = pajaSceneTemplate.clone();
@@ -561,7 +561,6 @@
                 }
             }
 
-            // Densidad de árboles reducida (cada 70 pasos en lugar de 35)
             for (let x = -segmentLength / 2; x < segmentLength / 2; x += 70) {
                 if (treeSceneTemplate) {
                     const treeLeft = treeSceneTemplate.clone();
@@ -588,7 +587,6 @@
 
                 const heart = new THREE.Mesh(heartGeo, heartMat);
                 heart.scale.set(0.1, 0.1, 0.1);
-                heart.rotation.x = Math.PI;
                 heart.position.set(x + 10, 1.2, (Math.random() - 0.5) * (trackWidth - 6));
                 group.add(heart);
                 collectibles.push({ mesh: heart, segmentGroup: group });
@@ -629,7 +627,11 @@
             if (!motoModel) return;
             const motoPos = motoModel.position;
 
-            collectibles.forEach(item => { item.mesh.rotation.z += 0.04; });
+            // Orientar los corazones rectos, mirando de frente al jugador con la punta hacia abajo
+            collectibles.forEach(item => { 
+                item.mesh.rotation.z += 0.04; 
+                item.mesh.lookAt(camera.position);
+            });
 
             const collisionRadius = 2.0;
 
